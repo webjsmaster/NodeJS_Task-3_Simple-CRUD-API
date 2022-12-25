@@ -1,16 +1,16 @@
 import {IncomingMessage, ServerResponse } from 'http';
-import { getUsers } from '../controllers';
-
+import { getUserById, getUsers } from '../controllers';
+import { processingResponse } from '../utils/processingResponse';
 
 export function get(req: IncomingMessage, res: ServerResponse ) {
-
-	const [api, users, id, ...rest] = req.url?.toString().split('/').filter(Boolean);
-
+	const url = req.url as string
+	const [,, id, ...rest] = url.split('/').filter(Boolean);
 
 	if (req.url === '/api/users'){
 		getUsers(req,res)
+	} else if (id && !rest.length) {
+		getUserById(req, res, id)
 	} else {
-		res.writeHead(400, {'Content-Type': 'text/plain'})
-		res.end( `{"message": "Page not found"}`)
+		processingResponse(res, 404, {'message': 'Page not found'})
 	}
 }

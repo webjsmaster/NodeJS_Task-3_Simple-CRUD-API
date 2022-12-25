@@ -1,20 +1,36 @@
 import { port } from "./utils/port"
 import * as http from "http"
-import {get} from "./routes";
+import {del, get, post, put} from "./routes";
 
 
 
-const server = http.createServer((req, res) => {
+export const server = http.createServer((req, res) => {
 	switch (req.method) {
-		case "GET": {
+		case 'GET': {
 			get(req, res)
+			break
+		}
+		case 'POST': {
+			post(req, res)
+			break
+		}
+		case 'PUT': {
+			put(req, res)
+			break
+		}
+		case 'DELETE': {
+			del(req, res)
 			break
 		}
 	}
 })
 
 server.listen(port, () => {
-	console.log(`Server rening on port: ${port}`)
+	console.log(`Server running on port: ${port}`)
 })
-console.log(port)
+
+server.on('close', () => {
+	server.close()
+})
+
 
