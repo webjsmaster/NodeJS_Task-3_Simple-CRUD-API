@@ -4,9 +4,8 @@
   "description": "Task is to implement simple CRUD API using in-memory database underneath.",
   "main": "src/index.ts",
   "scripts": {
-    "start": "node ./dist/bundle.js",
-    "build": "webpack",
-    "dev": "nodemon",
+    "start:prod": "tsc && node ./dist/index.js",
+    "start:dev": "nodemon",
     "test": "jest --watch --runInBand --detectOpenHandles"
   },
   "repository": {
