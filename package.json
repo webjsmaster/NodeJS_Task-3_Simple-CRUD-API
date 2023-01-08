@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "scripts": {
     "start:prod": "tsc && node ./dist/index.js",
-    "start:dev": "nodemon",
+    "start:multi": "nodemon ./src/index.ts --cluster=enable",
+    "start:dev": "nodemon ./src/index.ts",
     "test": "jest --watch --runInBand --detectOpenHandles"
   },
   "repository": {

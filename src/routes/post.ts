@@ -1,5 +1,6 @@
 import { IncomingMessage, ServerResponse } from "http";
 import { createUser } from "../controllers";
+import UserDB from "../data/User";
 import { processingResponse } from "../utils/processingResponse";
 
 export function post (req: IncomingMessage, res: ServerResponse) {

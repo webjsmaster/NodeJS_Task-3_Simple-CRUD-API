@@ -7,7 +7,7 @@ export interface IUser {
 	hobbies: string[];
 }
 
-let users: IUser[] = [
+export let users: IUser[] = [
 	// {
 	// 	id: "24135fd3-ac82-4ef4-a0d5-b2b057524cc5",
 	// 	username: "yuranius",
