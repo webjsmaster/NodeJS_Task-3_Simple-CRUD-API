@@ -1,25 +1,15 @@
 import cluster from "cluster";
 import * as http from "http";
-import { router, usersWorker } from "./router";
-import { parseArgs, port, processingResponse } from "./utils";
+import { router } from "./router";
+import { parseArgs, port } from "./utils";
 import os from "os";
-
 
 const args = parseArgs();
 export const server = http.createServer(router);
 
 import UserDB from "./data/User";
-import { appState } from "./data/state";
-
-export let users = new UserDB([
-	// {
-	// 	id: "sy",
-	// 	age: 34,
-	// 	username: "sdag",
-	// 	hobbies: [],
-	// },
-]);
-
+import { Action, User } from "./types/types";
+export let users = new UserDB([]);
 
 if (args["cluster"]) {
 	if (cluster.isPrimary) {
@@ -29,63 +19,35 @@ if (args["cluster"]) {
 			console.log(`Primary ${process.pid} server running on port: ${port}`);
 		});
 
-
 		for (let i = 0; i < 3; i++) {
 			let port = 4001 + i;
-			cluster.fork({ port: port });
+			let worker = cluster.fork({ port: port });
+
+			worker.on("message", (msg) => {
+				for (const id in cluster.workers) {
+					users.setUsers(msg);
+					cluster.workers[id]?.send(msg);
+				}
+			});
 		}
 
-
-
-		
-
-        // for (const id in cluster.workers) {
-        //     cluster.workers[id]?.on('message', (msg) => {
-		// 		let action = JSON.parse(msg).action
-        //         console.log('data ==>', msg);
-		// 		if (action === 'set'){
-		// 			//console.log(JSON.parse(msg).data);
-					
-		// 			users.insertUser(JSON.parse(msg).data)
-		// 		} else if (action === 'get') {
-		// 			console.log(users.getAll());
-
-				
-		// 			test = users.getAll()
-
-		// 		}
-        //     });
-        // }
-
-
-		cluster.on('message', async (worker, msg) => {
-			let action = JSON.parse(msg).action
-			if (action === 'set'){
-				let user:any = users.insertUser(JSON.parse(msg).data)
-				worker.send(user)
-			} 
+		cluster.on("fork", (msg) => {
+			for (const id in cluster.workers) {
+				cluster.workers[id]?.send(msg);
+			}
 		});
 
-		// cluster.on('message', (msg:any) => {
-		// 	console.log('PRYMARY USERS', users.getAll());
-		// })
-
-
-
 		//! ===================================-Worker-===================================================
-
 	} else {
+		//const port = Number(process.env.port) + Number(cluster.worker?.id)
 
 		server.listen(process.env.port, () => {
 			console.log(`Worker ${process.pid} server running on port: ${process.env.port}`);
 		});
 
-
-		process.on('message', (msg:any) => {
-			console.log('!!MESSAGE FROM PRIMARY!!', msg);
-			process.stdout.write(msg)
-		})
-
+		process.on("message", (msg: any) => {
+			users.setUsers(msg);
+		});
 	}
 
 	//! ==================================-Worker-====================================================
@@ -94,7 +56,6 @@ if (args["cluster"]) {
 		console.log(`Server running on port: ${port}, whith pid: ${process.pid}`);
 	});
 }
-
 
 process.on("SIGINT", () => {
 	server.close(() => {

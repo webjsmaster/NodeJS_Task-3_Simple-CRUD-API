@@ -1,17 +1,12 @@
 import { IncomingMessage, ServerResponse } from "http";
 import { processingResponse } from "./utils/processingResponse";
 import {del, get, post, put} from "./routes";
-import UserDB from "./data/User";
-
-
-export const usersWorker = new UserDB([])
-
 
 export function router(req: IncomingMessage, res: ServerResponse) {
 	try {
 		switch (req.method) {
 			case "GET": {
-				get(req, res, usersWorker);
+				get(req, res);
 				break;
 			}
 			case "POST": {
