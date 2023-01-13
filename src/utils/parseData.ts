@@ -1,6 +1,5 @@
 import { IncomingMessage } from "http";
 
-
 export async function parseData(req: IncomingMessage) {
 	return new Promise((resolve, reject) => {
 		try {
@@ -15,5 +14,5 @@ export async function parseData(req: IncomingMessage) {
 		} catch (error) {
 			reject(error);
 		}
-	})
+	});
 }

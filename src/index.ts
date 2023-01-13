@@ -1,56 +1,58 @@
 import cluster from "cluster";
 import * as http from "http";
-import { router } from "./router";
-import { parseArgs, port } from "./utils";
+import { router } from "./routes/router";
+import { masterServer, parseArgs, port } from "./utils";
+import UserDB from "./data/User";
+import { Body } from "./types/types";
 import os from "os";
 
 const args = parseArgs();
 export const server = http.createServer(router);
 
-import UserDB from "./data/User";
-import { Action, User } from "./types/types";
-export let users = new UserDB([]);
+export let users = new UserDB();
 
 if (args["cluster"]) {
 	if (cluster.isPrimary) {
 		const numCPUs = os.cpus().length;
+		let workerPorts: Array<number> = [];
+		let count: number = 0;
 
-		server.listen(port, () => {
-			console.log(`Primary ${process.pid} server running on port: ${port}`);
-		});
-
-		for (let i = 0; i < 3; i++) {
+		for (let i = 0; i < numCPUs; i++) {
 			let port = 4001 + i;
-			let worker = cluster.fork({ port: port });
+			workerPorts.push(port);
+			let worker = cluster.fork({ WORKER_PORT: port });
 
-			worker.on("message", (msg) => {
+			worker.on("message", (msg: Body) => {
 				for (const id in cluster.workers) {
-					users.setUsers(msg);
-					cluster.workers[id]?.send(msg);
+					users.setUsers(msg.body);
+					cluster.workers[id]?.send(msg.body);
 				}
 			});
 		}
 
-		cluster.on("fork", (msg) => {
-			for (const id in cluster.workers) {
-				cluster.workers[id]?.send(msg);
-			}
+		cluster.on("exit", (worker) => {
+			console.log(`Worker ${worker.process.pid} died. Let's launch another worker`);
+			cluster.fork();
 		});
 
-		//! ===================================-Worker-===================================================
-	} else {
-		//const port = Number(process.env.port) + Number(cluster.worker?.id)
+		masterServer({ workerPorts, count, port });
 
-		server.listen(process.env.port, () => {
-			console.log(`Worker ${process.pid} server running on port: ${process.env.port}`);
+		cluster.on("message", (msg: Body) => {
+			if (msg.type) {
+				for (const id in cluster.workers) {
+					cluster.workers[id]?.send(msg.body);
+				}
+			}
+		});
+	} else {
+		server.listen(process.env.WORKER_PORT, () => {
+			console.log(`Worker ${process.pid} server running on port: ${process.env.WORKER_PORT}`);
 		});
 
 		process.on("message", (msg: any) => {
 			users.setUsers(msg);
 		});
 	}
-
-	//! ==================================-Worker-====================================================
 } else {
 	server.listen(port, () => {
 		console.log(`Server running on port: ${port}, whith pid: ${process.pid}`);
@@ -61,4 +63,8 @@ process.on("SIGINT", () => {
 	server.close(() => {
 		process.exit(0);
 	});
+});
+
+process.on("exit", (code) => {
+	console.log("Process closed with status code: ", code);
 });

@@ -1,52 +1,49 @@
-import cluster from 'cluster';
 import { v4 as uuid } from "uuid";
 import { User } from '../types/types';
 
-import { setData } from './db';
 export default class UserDB {
 
-	// static getAll() {
-	// 	throw new Error("Method not implemented.");
-	// }
-    _users_database: Array<User> = [];
+    _users: Array<User> = [];
 
-    constructor (users: Array<User>) {
-        this._users_database = users
+    constructor () {
+        this._users = []
     }
 
     setUsers (users: Array<User>) {
-        this._users_database = users
+        this._users = users
     }
 
     getAll () {
-        return this._users_database
+        return this._users
     }
 
-    getOne (uid: string) {
-        return this._users_database.find(u => u.id === uid)
+    getOne (id: string) {
+        return this._users.find((user:User) => user.id === id)
     }
 
-    updateOne (uid: string, data: User) {
-        this._users_database = this._users_database.map(u => {
-            if (u.id === uid) {
+    updateOne (id: string, data: User) {
+        this._users = this._users.map(u => {
+            if (u.id === id) {
                 if (data.username) u.username = data.username;
                 if (data.age) u.age = data.age;
                 if (data.hobbies) u.hobbies = data.hobbies;
             }
             return u
         })
-        cluster.isWorker && setData('users', this._users_database)
-        return this.getOne(uid)
+        return this.getOne(id)
     }
 
-    deleteOne (uid: string) {
-        this._users_database = this._users_database.filter(u => u.id !== uid).map(user => user)
-        cluster.isWorker && setData('users', this._users_database)
+    deleteOne (id: string) {
+        if (this.getOne(id)){
+            return this._users = this._users.filter(u => u.id !== id)
+        } else {
+            return false
+        }
     }
 
     insertUser (data: User) {
         const id = uuid()
-        this._users_database.push({id, ...data})
+        this._users.push({id, ...data})
         return { id, ...data }
     }
 

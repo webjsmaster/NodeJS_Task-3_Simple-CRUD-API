@@ -147,6 +147,6 @@ describe('Scenario 4 - operations with other incorrect requests', () => {
         await supertest(server)
             .post(`/api/users`)
             .send(JSON.stringify(createUserErrorField))
-            .expect(400, {'message' : 'Body does not contain required fields'})
+            .expect(400, {'message' : 'Invalid request body'})
     })
 })
