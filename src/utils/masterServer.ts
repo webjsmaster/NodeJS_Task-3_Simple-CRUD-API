@@ -1,6 +1,6 @@
-import * as http from "http";
-import { ArgsMasterServer } from "../types/types";
-import { parseData } from "./parseData";
+import * as http from 'http';
+import { ArgsMasterServer } from '../types/types';
+import { parseData } from '.';
 
 export function masterServer({ workerPorts, count, port }: ArgsMasterServer) {
 	http
@@ -8,27 +8,27 @@ export function masterServer({ workerPorts, count, port }: ArgsMasterServer) {
 			const body = await parseData(req);
 
 			const options = {
-				host: "localhost",
+				host: 'localhost',
 				port: workerPorts[count],
 				path: req.url,
 				method: req.method,
 				headers: {
-					"Content-Type": "application/json",
-					"Content-Length": Buffer.byteLength(body as string),
+					'Content-Type': 'application/json',
+					'Content-Length': Buffer.byteLength(body as string),
 				},
 			};
 
 			const request = http.request(options, (response) => {
-				let code: any = response.statusCode;
-				response.setEncoding("utf8");
+				const code = response.statusCode;
+				response.setEncoding('utf8');
 				code === 204 && res.writeHead(code).end();
-				response.on("data", (chunk: any) => {
-					res.writeHead(code, { "Content-type": "application/json" });
+				response.on('data', (chunk: any) => {
+					res.writeHead(code as number, { 'Content-type': 'application/json' });
 					res.end(JSON.stringify(JSON.parse(chunk)));
 				});
 			});
 
-			request.on("error", (e) => {
+			request.on('error', (e) => {
 				console.error(`problem with request: ${e.message}`);
 			});
 

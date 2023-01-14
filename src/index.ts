@@ -1,28 +1,28 @@
-import cluster from "cluster";
-import * as http from "http";
-import { router } from "./routes/router";
-import { masterServer, parseArgs, port } from "./utils";
-import UserDB from "./data/User";
-import { Body } from "./types/types";
-import os from "os";
+import cluster from 'cluster';
+import * as http from 'http';
+import { router } from './routes/router';
+import { masterServer, parseArgs, port } from './utils';
+import UserDB from './data/User';
+import { Body, User } from './types/types';
+import os from 'os';
 
 const args = parseArgs();
 export const server = http.createServer(router);
 
-export let users = new UserDB();
+export const users = new UserDB();
 
-if (args["cluster"]) {
+if (args['cluster']) {
 	if (cluster.isPrimary) {
 		const numCPUs = os.cpus().length;
-		let workerPorts: Array<number> = [];
-		let count: number = 0;
+		const workerPorts: Array<number> = [];
+		const count = 0;
 
 		for (let i = 0; i < numCPUs; i++) {
-			let port = 4001 + i;
+			const port = 4001 + i;
 			workerPorts.push(port);
-			let worker = cluster.fork({ WORKER_PORT: port });
+			const worker = cluster.fork({ WORKER_PORT: port });
 
-			worker.on("message", (msg: Body) => {
+			worker.on('message', (msg: Body) => {
 				for (const id in cluster.workers) {
 					users.setUsers(msg.body);
 					cluster.workers[id]?.send(msg.body);
@@ -30,14 +30,14 @@ if (args["cluster"]) {
 			});
 		}
 
-		cluster.on("exit", (worker) => {
+		cluster.on('exit', (worker) => {
 			console.log(`Worker ${worker.process.pid} died. Let's launch another worker`);
 			cluster.fork();
 		});
 
 		masterServer({ workerPorts, count, port });
 
-		cluster.on("message", (msg: Body) => {
+		cluster.on('message', (msg: Body) => {
 			if (msg.type) {
 				for (const id in cluster.workers) {
 					cluster.workers[id]?.send(msg.body);
@@ -49,22 +49,22 @@ if (args["cluster"]) {
 			console.log(`Worker ${process.pid} server running on port: ${process.env.WORKER_PORT}`);
 		});
 
-		process.on("message", (msg: any) => {
+		process.on('message', (msg: Array<User>) => {
 			users.setUsers(msg);
 		});
 	}
 } else {
 	server.listen(port, () => {
-		console.log(`Server running on port: ${port}, whith pid: ${process.pid}`);
+		console.log(`Server running on port: ${port}, thigh pid: ${process.pid}`);
 	});
 }
 
-process.on("SIGINT", () => {
+process.on('SIGINT', () => {
 	server.close(() => {
 		process.exit(0);
 	});
 });
 
-process.on("exit", (code) => {
-	console.log("Process closed with status code: ", code);
+process.on('exit', (code) => {
+	console.log('Process closed with status code: ', code);
 });
